@@ -21,6 +21,7 @@ You might also need:
 
 ## Getting Started
 - Clone the repository
+
 - Create subdirectories called `working` and `ext`
 - If necessary: 
   - create a symlink `ext/morph` to the main directory of the morph tools
