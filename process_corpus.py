@@ -18,9 +18,9 @@ def plain_text(corpus_file, no_split):
 		for line in f:
 			if line.strip():
 				if no_split:
-					sentences.append(unicode(line.strip(), 'utf-8'))
+					sentences.append(line)
 				else:
-					sentences += splitter.tokenize(unicode(line.strip(), 'utf-8'))
+					sentences += splitter.tokenize(line)
 	documents.append(sentences)
 	
 	return documents
@@ -35,13 +35,13 @@ def bnc(corpus_file, corpus_type, cache_path):
 	documents = []
 	# Read parsed XML from cached file, for bnc/bnc-dev/bnc-test, if available
 	if os.path.exists(cache_path):
-		print 'Reading BNC from {0}'.format(cache_path)
+		print('Reading BNC from {0}'.format(cache_path))
 		documents = json.load(open(cache_path, 'r'))
 		return documents
 		
 	# Read BNC from file and parse, if no cached version available
 	time_0 = time.time()
-	print 'Processing BNC...'
+	print('Processing BNC...')
 	# Cycle through subdirectories
 	subdirectories = sorted(os.listdir(corpus_file))
 	for subdirectory in subdirectories:
@@ -66,10 +66,10 @@ def bnc(corpus_file, corpus_type, cache_path):
 				# Get metadata
 				for idno in parsed_xml.find_all('idno'):
 					if idno['type'] == 'bnc':
-						document_idno = unicode(idno.string )
+						document_idno = str(idno.string )
 				for class_code in parsed_xml.find_all('classCode'):
 					if class_code['scheme'] == 'DLEE':
-						class_code = unicode(class_code.string)
+						class_code = str(class_code.string)
 						break
 				# Cycle through sentences, extract unicode string
 				for sentence in parsed_xml.find_all('s'):
@@ -85,7 +85,7 @@ def bnc(corpus_file, corpus_type, cache_path):
 					sentence_with_metadata = {'document_id': document_idno, 'sentence_number': sentence_number, 'sentence': sentence_string}
 					sentences_with_metadata.append(sentence_with_metadata)
 				documents.append(sentences_with_metadata)
-	print 'Done! Processing BNC took {0:.2f} seconds'.format(time.time() - time_0)
+	print('Done! Processing BNC took {0:.2f} seconds'.format(time.time() - time_0))
 	
 	# Cache parsed XML
 	json.dump(documents, open(cache_path, 'w'))

@@ -35,7 +35,7 @@ def get_idioms(url, landing_url, use_socks_proxy = False):
 				pass # Sometimes parent has no class
 	# Cycle through pages, get actual idioms
 	for i in range(1, int(last_page) + 1):
-		print 'Scraping page {0} of {1}'.format(i, last_page) # Very slow, so give progress updates
+		print('Scraping page {0} of {1}'.format(i, last_page)) # Very slow, so give progress updates
 		# Get next page url
 		if i < int(last_page):
 			next_page = url + re.sub('gridpager/{0}'.format(last_page), 'gridpager/{0}'.format(i + 1), url_template)

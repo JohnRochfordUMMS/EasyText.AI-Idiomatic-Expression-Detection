@@ -7,8 +7,7 @@ import pos2morpha
 
 import subprocess, shlex, time, json, re, itertools, csv
 import spacy
-import en_core_web_sm as spacy_model 
-from stanfordcorenlp import StanfordCoreNLP
+import corenlp
 import nltk.data
 
 ###### STANFORD TO SPACY ######
@@ -116,7 +115,7 @@ def stanford_to_spacy(parse):
 				new_token.head_idx = -1
 				new_token.dep_ = u'ROOT'
 				new_token.head = new_token
-				print 'Headless word \'{0}\' in sentence "{1}"'.format(new_token.text.encode('utf-8'), ''.join([x.text_with_ws.encode('utf-8') for x in span]))
+				print('Headless word \'{0}\' in sentence "{1}"'.format(new_token.text.encode('utf-8'), ''.join([x.text_with_ws.encode('utf-8') for x in span])))
 		# Add subtree to each token
 		for new_token in span:
 			new_token.subtree = new_token.get_subtree()
@@ -132,13 +131,17 @@ def load_parser(parser_type):
 	'''Loads Spacy or Stanford CoreNLP'''
 
 	time_0 = time.time()
-	print 'Loading parser...'
+	print('Loading parser...')
 	if parser_type == 'spacy':
-		parser = spacy_model.load()
+		parser = spacy.load("en_core_web_sm")
+	"""
 	elif parser_type == 'stanford':
+		with corenlp.CoreNLPClient(annotators="tokenize ssplit pos lemma ner depparse".split()) as client:
+  		ann = client.annotate(text)
+		
 		parser = StanfordCoreNLP('ext/stanford', memory='6g')
-		parse((parser_type, parser), 'The cat sat on the mat.') # Annotate dummy sentence to force loading of annotation modules
-	print 'Done! Loading parser took {0:.2f} seconds'.format(time.time() - time_0)
+		parse((parser_type, parser), 'The cat sat on the mat.') # Annotate dummy sentence to force loading of annotation modules"""
+	print('Done! Loading parser took {0:.2f} seconds'.format(time.time() - time_0))
 
 	return (parser_type, parser)
 
@@ -147,17 +150,13 @@ def parse(parser, text):
 
 	if parser[0] == 'spacy':
 		# Convert to unicode if necessary
-		try:
-			text = unicode(text, 'utf-8')
-		except TypeError:
-			pass
 		# Normalize quotes, ‘ ’ ❛ ❜ to ', and “ ” ❝ ❞ to ", Spacy doesn't process them well
 		text = re.sub(u'‘|’|❛|❜', u"'", text)
 		text = re.sub(u'“|”|❝|❞', u'"', text)
 		# Insert a space between punctuation and a dash, Spacy doesn't process that well either
-		text = re.sub(ur'([^\w\s])([-—])', r'\1 \2', text)
+		text = re.sub(r'([^\w\s])([-—])', r'\1 \2', text)
 		return parser[1](text)
-
+	"""
 	if parser[0] == 'stanford':
 		# Convert from unicode if necessary
 		try:
@@ -167,16 +166,16 @@ def parse(parser, text):
 		properties={'annotators': 'tokenize,ssplit,pos,lemma,depparse','pipelineLanguage':'en','outputFormat':'json'}
 		parsed_text = parser[1].annotate(text, properties=properties)
 		parsed_text = json.loads(parsed_text)
-		return stanford_to_spacy(parsed_text)
+		return stanford_to_spacy(parsed_text)"""
 
 ###### POS-TAGGING ######
 def load_pos_tagger():
 	'''Loads Spacy PoS-tagger which takes pre-tokenized text.'''
 	
 	time_0 = time.time()
-	print 'Loading PoS-tagger...'
-	pos_tagger = spacy_model.load(disable = ['ner', 'parser'])
-	print 'Done! Loading PoS-tagger took {0:.2f} seconds'.format(time.time() - time_0)
+	print('Loading PoS-tagger...')
+	pos_tagger = spacy.load("en_core_web_sm", disable = ['ner', 'parser'])
+	print('Done! Loading PoS-tagger took {0:.2f} seconds'.format(time.time() - time_0))
 
 	return pos_tagger
 
@@ -256,16 +255,16 @@ def load_tokenizer():
 	'''Loads Spacy tokenizer'''
 
 	time_0 = time.time()
-	print 'Loading tokenizer...'
-	tokenizer = spacy_model.load(disable = ['tagger', 'ner', 'parser'])
-	print 'Done! Loading tokenizer took {0:.2f} seconds'.format(time.time() - time_0)
+	print('Loading tokenizer...')
+	tokenizer = spacy.load("en_core_web_sm", disable = ['tagger', 'ner', 'parser'])
+	print('Done! Loading tokenizer took {0:.2f} seconds'.format(time.time() - time_0))
 
 	return tokenizer
 
 def tokenize(tokenizer, sentence):
 	'''Parses a (unicode) sentence, returns list of Spacy Tokens'''
 	try:
-		return tokenizer(unicode(sentence, 'utf-8'))
+		return tokenizer(sentence)
 	except TypeError:
 		return tokenizer(sentence)
 
@@ -284,7 +283,7 @@ def get_example_sentences(idioms, sentences_file, cache_file):
 	if re.search('.json$', sentences_file):
 		idioms_with_sentences = json.load(open(sentences_file, 'r'))
 		if set(idioms) <= set(idioms_with_sentences.keys()):
-			print 'Using cached example sentences from {0}'.format(sentences_file)
+			print('Using cached example sentences from {0}'.format(sentences_file))
 			# Select only the idioms part of the idiom dictionary 
 			if set(idioms) < set(idioms_with_sentences.keys()):
 				idioms_with_sentences = {key: idioms_with_sentences[key] for key in idioms_with_sentences if key in idioms}
@@ -292,7 +291,7 @@ def get_example_sentences(idioms, sentences_file, cache_file):
 		else:
 			raise Exception('{0} does not contain entries for all the idioms specified in the dictionary argument, quitting.'.format(sentences_file))
 	else:
-		print '{0} is not a cached json-file, extracting sentences containing idioms...'.format(sentences_file)
+		print('{0} is not a cached json-file, extracting sentences containing idioms...'.format(sentences_file))
 
 	# Add fallback option: no example sentence
 	for idiom in idioms:
@@ -304,12 +303,12 @@ def get_example_sentences(idioms, sentences_file, cache_file):
 	# Extract first 1000 lines containing the idiom with grep, then split and find sentences
 	for idx, idiom in enumerate(idioms):
 		if idx%100 == 0 and idx > 0:
-			print '\tGetting example sentences for {0} of {1} idioms took {2} seconds'.format(idx, len(idioms), time.time()-time_0)
+			print('\tGetting example sentences for {0} of {1} idioms took {2} seconds'.format(idx, len(idioms), time.time()-time_0))
 		call = shlex.split('grep -m 1000 "{0}" {1}'.format(u8(idiom), sentences_file))
 		process = subprocess.Popen(call, stdin=subprocess.PIPE, stdout = subprocess.PIPE, stderr=subprocess.PIPE)
 		output = process.communicate()
 		output = output[0].strip()
-		sentences = splitter.tokenize(unicode(output, 'utf-8'))
+		sentences = splitter.tokenize(output)
 		for sentence in sentences:
 			if idiom_regexes[idx].search(sentence):
 				# Should have at least 3 extra words in the 'sentence'
@@ -325,9 +324,9 @@ def get_example_sentences(idioms, sentences_file, cache_file):
 	ofn = cache_file
 	with open(ofn, 'w') as of:
 		json.dump(idioms_with_sentences, of)
-		print 'Caching idioms and example sentences in {0}'.format(ofn)
+		print('Caching idioms and example sentences in {0}'.format(ofn))
 
-	print 'Done! took {0:.2f} seconds'.format(time.time() - time_0)
+	print('Done! took {0:.2f} seconds'.format(time.time() - time_0))
 
 	return idioms_with_sentences
 
@@ -412,7 +411,7 @@ def inflect_idioms(idioms, morph_dir):
 	pos_tagger = load_pos_tagger()
 	inflected_idioms = []
 	base_form_map = {} # Maps inflectional variants to base form, format: {'inflectional variant': 'base form'}
-	print 'Inflecting idioms...'
+	print('Inflecting idioms...')
 	time_0 = time.time()	
 
 	for idiom in idioms:
@@ -443,15 +442,15 @@ def inflect_idioms(idioms, morph_dir):
 					base_tuples.append((base_token.split('_')[0],))
 			# Generate combinations of inflected tokens and store base form mapping
 			for inflected_tokens in itertools.product(*base_tuples):
-				inflected_idiom = unicode(' '.join(inflected_tokens), 'utf-8')
+				inflected_idiom = ' '.join(inflected_tokens)
 				inflected_idioms.append(inflected_idiom)
 				base_form_map[inflected_idiom] = idiom
 
 	# Join to original list, and filter out duplicates
 	inflected_idioms = list(set(idioms + inflected_idioms))
 
-	print 'Done! Inflecting idioms took {0:.2f} seconds'.format(time.time() - time_0)
-	print 'With inflections, we have {0} idioms'.format(len(inflected_idioms))
+	print('Done! Inflecting idioms took {0:.2f} seconds'.format(time.time() - time_0))
+	print('With inflections, we have {0} idioms'.format(len(inflected_idioms)))
 
 	return inflected_idioms, base_form_map
 
@@ -476,13 +475,13 @@ def expand_indefinite_pronouns(idioms):
 				base_form_map[expanded_idiom] = idiom
 		# Add possessive pronouns and a wildcard for other words
 		elif re.search("\\bsomeone's\\b", idiom):
-			for possessive_pronoun in possessive_pronouns + [unicode("—'s", 'utf-8')]:
+			for possessive_pronoun in possessive_pronouns + ["—'s"]:
 				expanded_idiom = re.sub("\\bsomeone's\\b", possessive_pronoun, idiom)
 				expanded_idioms.append(expanded_idiom)
 				base_form_map[expanded_idiom] = idiom
 		# Add objective pronouns and a wildcard for other words
 		elif re.search("\\bsomeone\\b", idiom):
-			for objective_pronoun in objective_pronouns + [unicode("—", 'utf-8')]:
+			for objective_pronoun in objective_pronouns + ["—"]:
 				expanded_idiom = re.sub("\\bsomeone\\b", objective_pronoun, idiom)
 				expanded_idioms.append(expanded_idiom)
 				base_form_map[expanded_idiom] = idiom

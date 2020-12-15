@@ -11,7 +11,8 @@ import oxford
 import utils
 from utils import u8
 
-import re, os, json, random, time
+import regex as re
+import os, json, random, time
 
 def combine_sets(combination_type, a, b, c = []):
 	'''Combines 2/3 sets of idioms in different ways'''
@@ -60,7 +61,7 @@ def get_idiom_list(dictionary_type = config.DICT, case_sensitive = False):
 				json.dump(idioms, of)
 		# Read idiom list from file
 		else:
-			print 'Reading idiom list from {0}'.format(ifn)
+			print('Reading idiom list from {0}'.format(ifn))
 			with open(ifn, 'r') as f:
 				idioms = json.load(f)
 		# Refine Oxford idiom list
@@ -101,7 +102,7 @@ def get_idiom_list(dictionary_type = config.DICT, case_sensitive = False):
 
 	# Combination of a pair of dictionaries
 	elif len(dictionary_type) == 2:
-		print 'Taking the intersection of a pair of dictionaries'
+		print('Taking the intersection of a pair of dictionaries')
 		dictionary_idioms_1 = get_idiom_list(dictionary_type = dictionary_type[0:1], case_sensitive = case_sensitive)
 		dictionary_idioms_2 = get_idiom_list(dictionary_type = dictionary_type[1:2], case_sensitive = case_sensitive)
 		# Combine dictionaries
@@ -254,7 +255,7 @@ def string_match(idioms, documents, case_sensitive = False, expand_pronouns = Tr
 							idiom_words = [re.escape(idiom_word) for idiom_word in idiom_words]
 						single_idiom_regex = r'\b' + separator.join(idiom_words) + r'\b'
 						if u'\u2014' in idiom:
-							single_idiom_regex = re.sub(ur'\\\u2014', r'\w+', single_idiom_regex)
+							single_idiom_regex = re.sub(r'\\\u2014', r'\w+', single_idiom_regex)
 						if re.match(single_idiom_regex, matched_string):
 							dictionary_form = idiom
 							break
@@ -301,7 +302,7 @@ def parse_extract(idioms, sentences):
 	# Extract idiom instances by matching parse trees
 	for sentences in documents:
 		time_0 = time.time()
-		print 'Parsing document...'
+		print('Parsing document...')
 		# Get sentence strings from BNC data and parse
 		if config.CORPUS_TYPE [0:3]== 'bnc':
 			sentences_with_metadata = sentences
@@ -313,7 +314,7 @@ def parse_extract(idioms, sentences):
 			parsed_corpus = utils.parse(parser, ' '.join(sentences))
 			parsed_sentences = parsed_corpus.sents
 
-		print 'Done! Parsing document took {0:.2f} seconds'.format(time.time() - time_0)
+		print('Done! Parsing document took {0:.2f} seconds'.format(time.time() - time_0))
 		# Cycle through sentences, attempt to match parse trees
 		for sentence_idx, parsed_sentence in enumerate(parsed_sentences):
 			for parsed_idiom in parsed_idioms:
@@ -505,7 +506,7 @@ def parse_extract(idioms, sentences):
 	return extracted_idioms
 
 if __name__ == '__main__':
-	print 'Hello! Time is {0}'.format(config.TIME)
+	print('Hello! Time is {0}'.format(config.TIME))
 
 	# Create working directory if it doesn't exist
 	if not os.path.isdir(config.WORK_DIR):
@@ -514,15 +515,15 @@ if __name__ == '__main__':
 	# Read in corpus as list of documents
 	if config.CORPUS_TYPE == 'plain':
 		documents = process_corpus.plain_text(config.CORPUS, config.NO_SPLIT)
-		print 'First sentence of corpus: {0}\nLast sentence of corpus: {1}'.format(u8(documents[0][0]), u8(documents[-1][-1]))
+		print('First sentence of corpus: {0}\nLast sentence of corpus: {1}'.format(u8(documents[0][0]), u8(documents[-1][-1])))
 	elif config.CORPUS_TYPE[0:3] == 'bnc':
 		cache_path = os.path.join(config.WORK_DIR, '{0}_parsed_xml.json'.format(config.CORPUS_TYPE))
 		documents = process_corpus.bnc(config.CORPUS, config.CORPUS_TYPE, cache_path)
-		print 'First sentence of corpus: {0}\nLast sentence of corpus: {1}'.format(u8(documents[0][0]['sentence']), u8(documents[-1][-1]['sentence']))
+		print('First sentence of corpus: {0}\nLast sentence of corpus: {1}'.format(u8(documents[0][0]['sentence']), u8(documents[-1][-1]['sentence'])))
 
 	# Get idioms from dictionary
 	idioms = get_idiom_list(case_sensitive = config.CASE_SENSITIVE)
-	print "Found {4} idioms ranging from '{0}', '{1}' to '{2}', '{3}'".format(u8(idioms[0]), u8(idioms[1]), u8(idioms[-2]), u8(idioms[-1]), len(idioms))
+	print("Found {4} idioms ranging from '{0}', '{1}' to '{2}', '{3}'".format(u8(idioms[0]), u8(idioms[1]), u8(idioms[-2]), u8(idioms[-1]), len(idioms)))
 
 	# Extract idioms
 	extraction_start = time.time()
@@ -536,11 +537,11 @@ if __name__ == '__main__':
 		extracted_idioms = parse_extract(idioms, documents)
 
 	# Print information about extracted idioms
-	print 'Extracted {0} idioms in {1:.2f} seconds'.format(len(extracted_idioms), time.time() - extraction_start)
+	print('Extracted {0} idioms in {1:.2f} seconds'.format(len(extracted_idioms), time.time() - extraction_start))
 	idiom_set = set([extracted_idiom['idiom'] for extracted_idiom in extracted_idioms])
 	if len(idiom_set) >= 5:
 		idiom_sample = random.sample(idiom_set, 5)
-		print 'Extracted these idioms, among others: {0}, {1}, {2}, {3}, {4}'.format(u8(idiom_sample[0]), u8(idiom_sample[1]), u8(idiom_sample[2]), u8(idiom_sample[3]), u8(idiom_sample[4]))
+		print('Extracted these idioms, among others: {0}, {1}, {2}, {3}, {4}'.format(u8(idiom_sample[0]), u8(idiom_sample[1]), u8(idiom_sample[2]), u8(idiom_sample[3]), u8(idiom_sample[4])))
 
 	# Output extracted idioms to file 
 	utils.write_csv(extracted_idioms, config.OUTFILE)

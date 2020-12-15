@@ -11,18 +11,19 @@ import re, sys
 
 def ptb2claws(token, tag):
     if tag == 'NNP': 
-		return 'NP'
-    if tag == 'NNPS': 
-		return 'NP2'
-    if tag == 'NNS': 
-		return 'NN2'
-    if token in ('ca', 'sha', 'wo', '\'d') and tag == 'MD': 
-		return 'VM'
-    if token == 'n\'t' and tag == 'RB': 
-		return 'XX'
-    if token == '\'d' and tag == 'VBD': 
-		return 'VH'
+      return 'NP'
+    elif tag == 'NNPS': 
+      return 'NP2'
+    elif tag == 'NNS':
+      return 'NN2'
+    elif token in ('ca', 'sha', 'wo', '\'d') and tag == 'MD':
+      return 'VM'
+    elif token == 'n\'t' and tag == 'RB':
+      return 'XX'
+    elif token == '\'d' and tag == 'VBD':
+      return 'VH'
     return tag
+   
 
 def convert_token(token):
     pipeindex = token.rfind('|')
