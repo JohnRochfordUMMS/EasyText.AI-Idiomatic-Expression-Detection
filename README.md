@@ -10,8 +10,8 @@ To run this code, you'll need the following Python setup:
 * spacy 2.3.5 + en_core_web_sm 2.3.1
 * lxml 3.3.3
 
-Different versions might work just as well, but cannot be guaranteed. 
-`en_core_web_sm` can be downloaded by `python -m spacy download en_core_web_sm`
+Different versions might work just as well, but cannot be guaranteed.
+`en_core_web_sm` can be downloaded by `python -m spacy download en_core_web_sm`.
 
 You might also need:
 * [morph](http://users.sussex.ac.uk/~johnca/morph.html), if you want to run inflectional string matching.
@@ -21,7 +21,6 @@ You might also need:
 
 ## Getting Started
 - Clone the repository
-
 - Create subdirectories called `working` and `ext`
 - If necessary: 
   - create a symlink `ext/morph` to the main directory of the morph tools

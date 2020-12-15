@@ -19,7 +19,7 @@ extracted_idioms = []
 with open(args.extracted, 'r') as csvfile:
 	csvreader = csv.reader(csvfile, delimiter = '\t', quoting=csv.QUOTE_MINIMAL, quotechar = '"')
 	for csvrow in csvreader:
-		extracted_idioms.append({'document_id': csvrow[4], 'sentence_number': csvrow[5], 'idiom': csvrow[0], 'context': unicode(csvrow[3], 'utf-8'), 'start': csvrow[1], 'end': csvrow[2]})
+		extracted_idioms.append({'document_id': csvrow[4], 'sentence_number': csvrow[5], 'idiom': csvrow[0], 'context': csvrow[3], 'start': csvrow[1], 'end': csvrow[2]})
 		
 annotated_idioms = json.load(open(args.annotated, 'r'))
 
@@ -58,13 +58,13 @@ recall = tp / (tp + fn)
 f1 = 2 * (precision * recall) / (precision + recall)
 
 # Print results
-print '### RESULTS ###'
-print 'Total number of annotated PIEs: {0}'.format(len(annotated_idioms))
-print 'Total number of extracted PIEs: {0}\n'.format(len(extracted_idioms))
-print 'True Positives: {0}\nFalse Positives: {1}\nFalse Negatives: {2}\n'.format(tp, fp, fn)
-print 'Precision: {0}%'.format(precision*100)
-print 'Recall: {0}%'.format(recall*100)
-print 'F1-score: {0}%'.format(f1*100)
+print('### RESULTS ###')
+print('Total number of annotated PIEs: {0}'.format(len(annotated_idioms)))
+print('Total number of extracted PIEs: {0}\n'.format(len(extracted_idioms)))
+print('True Positives: {0}\nFalse Positives: {1}\nFalse Negatives: {2}\n'.format(tp, fp, fn))
+print('Precision: {0}%'.format(precision*100))
+print('Recall: {0}%'.format(recall*100))
+print('F1-score: {0}%'.format(f1*100))
 
 # Print examples of classifications
 def show_examples(idioms, evaluation):
@@ -89,36 +89,36 @@ def show_examples(idioms, evaluation):
 			highlighted_context += context[start:end]
 			highlighted_context += stop
 			highlighted_context += context[end:]
-			print highlighted_context,
-			print '({2} - doc. {0} - sent. {1})'.format(idiom['document_id'], idiom['sentence_number'], idiom['idiom'])
+			print(highlighted_context)
+			print('({2} - doc. {0} - sent. {1})'.format(idiom['document_id'], idiom['sentence_number'], idiom['idiom']))
 			count += 1
 			if count % 10 == 0:
-				user_input = unicode(raw_input("Show 10 more examples? (y/n): "), 'utf-8')
+				user_input = input("Show 10 more examples? (y/n): ")
 				if user_input.lower() != 'y':
 					break
 	else: # No break
-		print 'No more examples!'
+		print('No more examples!')
 
 # Prompt and show examples for different classes
 # Shuffle idiom lists to avoid seeing same examples again and again
 random.shuffle(extracted_idioms) 
 random.shuffle(annotated_idioms) 
-user_input = unicode(raw_input("Show examples of classifications? (y/n): "), 'utf-8')
+user_input = input("Show examples of classifications? (y/n): ")
 if user_input.lower() == 'y':
-	user_input = unicode(raw_input("Show examples of true positives? (y/n): "), 'utf-8')
+	user_input = input("Show examples of true positives? (y/n): ")
 	if user_input.lower() == 'y':
 		show_examples(extracted_idioms, 'tp')
-	user_input = unicode(raw_input("Show examples of false positives? (y/n): "), 'utf-8')
+	user_input = input("Show examples of false positives? (y/n): ")
 	if user_input.lower() == 'y':
 		show_examples(extracted_idioms, 'fp')
-	user_input = unicode(raw_input("Show examples of false negatives? (y/n): "), 'utf-8')
+	user_input = input("Show examples of false negatives? (y/n): ")
 	if user_input.lower() == 'y':
 		show_examples(annotated_idioms, 'fn')			
 
 # Split performance for most frequent PIE types in corpus
 def performance_per_type(annotated_idioms, extracted_idioms, n):
 	most_frequent_types = Counter([x['idiom'] for x in annotated_idioms]).most_common()
-	print 'PIE Type' + 17*' ' + 'Count\tPrecision\tRecall\tF1-score'
+	print('PIE Type' + 17*' ' + 'Count\tPrecision\tRecall\tF1-score')
 	for pie_type in most_frequent_types[:n]:
 		pie = pie_type[0]
 		count = pie_type[1]
@@ -134,8 +134,8 @@ def performance_per_type(annotated_idioms, extracted_idioms, n):
 			recall = 0.
 			f1 = 0.
 		pie += (25 - len(pie)) * ' '
-		print '{0}{1}\t{2:.2f}\t\t{3:.2f}\t{4:.2f}'.format(pie, count, precision * 100, recall * 100, f1 * 100)
+		print('{0}{1}\t{2:.2f}\t\t{3:.2f}\t{4:.2f}'.format(pie, count, precision * 100, recall * 100, f1 * 100))
 		
-user_input = unicode(raw_input("Show performance for 25 most frequent PIE types? (y/n): "), 'utf-8')
+user_input = input("Show performance for 25 most frequent PIE types? (y/n): ")
 if user_input.lower() == 'y':
 	performance_per_type(annotated_idioms, extracted_idioms, 25)
