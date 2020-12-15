@@ -7,10 +7,11 @@ To run this code, you'll need the following Python setup:
 * beautifulsoup4 4.5.1
 * requests 2.17.3
 * nltk 3.2.4
-* spacy 2.3.5 + en_core_web_sm 2.3.1 (`en_core_web_sm` can be downloaded by `python -m spacy download en_core_web_sm`)
+* spacy 2.3.5 + en_core_web_sm 2.3.1
 * lxml 3.3.3
 
 Different versions might work just as well, but cannot be guaranteed. 
+`en_core_web_sm` can be downloaded by `python -m spacy download en_core_web_sm`
 
 You might also need:
 * [morph](http://users.sussex.ac.uk/~johnca/morph.html), if you want to run inflectional string matching.
