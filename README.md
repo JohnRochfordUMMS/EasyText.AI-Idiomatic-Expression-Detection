@@ -7,19 +7,20 @@ To run this code, you'll need the following Python setup:
 * beautifulsoup4 4.5.1
 * requests 2.17.3
 * nltk 3.2.4
-* spacy 2.3.5 + en_core_web_sm 2.3.1 (`en_core_web_sm` can be downloaded by `python -m spacy download en_core_web_sm`)
+* spacy 2.3.5 + en_core_web_sm(md/lg) 2.3.1 
 * lxml 3.3.3
 
 Different versions might work just as well, but cannot be guaranteed. 
 
 You might also need:
+* [sPacy](https://spacy.io/models/en) pretrined English language model`en_core_web_sm(md/lg)` can be downloaded by `python -m spacy download en_core_web_sm(md/lg)` 
 * [morph](http://users.sussex.ac.uk/~johnca/morph.html), if you want to run inflectional string matching.
-* [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/), if you want to run the parse-based method with the Stanford parser.
-* the Python library [stanfordcorenlp](https://github.com/Lynten/stanford-corenlp) 3.7.0.2  (Stanford CoreNLP parsing is currently unavailable.)
+* ~~[Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/), if you want to run the parse-based method with the Stanford parser.~~
+* ~~the Python library [stanfordcorenlp](https://github.com/Lynten/stanford-corenlp) 3.7.0.2~~ (Stanford CoreNLP parsing is currently unavailable.)
 * the [British National Corpus](http://www.natcorp.ox.ac.uk/), if you want to extract PIEs from that. 
 
 ## Getting Started
-- Clone the repository
+- Clone the repositor
 
 - Create subdirectories called `working` and `ext`
 - If necessary: 
