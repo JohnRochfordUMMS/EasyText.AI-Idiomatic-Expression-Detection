@@ -7,174 +7,37 @@ import pos2morpha
 
 import subprocess, shlex, time, json, re, itertools, csv
 import spacy
-import corenlp
 import nltk.data
 
-###### STANFORD TO SPACY ######
-class StanfordDoc:
-	'''Spacy-Doc-like container for Stanford output'''
-
-	def __init__(self):
-		self.sents = []
-
-	def __iter__(self):
-		return iter(self.tokens)
-
-	def __getitem__(self, i):
-		if isinstance(i, slice):
-			return StanfordSpan(self.tokens[i.start:i.stop])
-		else:
-			return self.tokens[i]
-
-	# Generate list of tokens from sentences
-	def set_tokens(self):
-		self.tokens = [token for sent in self.sents for token in sent]
-
-class StanfordSpan:
-	'''Spacy-Span-like container for Stanford output'''
-
-	def __init__(self, tokens):
-		self.tokens = tokens
-		self.start = self.tokens[0].i # Starting token index in document
-		self.start_char = self.tokens[0].idx # Starting character index in document
-		self.text_with_ws = ''.join([token.text_with_ws for token in self.tokens])
-		self.text = ''.join([token.text_with_ws for token in self.tokens[:-1]]) + self.tokens[-1].text
-
-	def __iter__(self):
-		return iter(self.tokens)
-
-	def __getitem__(self, i):
-		return self.tokens[i]
-
-class StanfordToken:
-	'''Spacy-Token-like container for Stanford output'''
-
-	def __init__(self, i, idx, lemma, tag, text, ws, word, doc):
-		self.i = i # Token index in document
-		self.idx = idx # Starting character index in document
-		self.lemma_ = lemma
-		self.tag_ = tag # PoS-tag inventory might differ slightly, but should not cause problems
-		self.text = text
-		self.text_with_ws = text + ws
-		self.lower_ = word.lower()
-		self.children = []
-		self.doc = doc
-
-	def __str__(self):
-		return self.text
-
-	# Recursively gets all the syntactic descendants of a token, including self
-	def get_descendants(self):
-		descendants = [self]
-		for child in self.children:
-			descendants += child.get_descendants()
-		return descendants
-
-	# Sets the subtree attribute, which is an ordered generator for all descendants of a token
-	def get_subtree(self):
-		return sorted(self.get_descendants(), key=lambda x: x.i)
-
-	# Sets the rights attribute, which is an ordered generator for all children to the right of a token
-	def get_rights(self):
-		return [child for child in self.children if child.i > self.i]
-
-	def __repr__(self):
-		return self.text
-
-def stanford_to_spacy(parse):
-	'''Turn Stanford CoreNLP output into a Spacy-like object'''
-
-	# Convert into Spacy-like objects
-	doc = StanfordDoc()
-	doc_i = 0
-	for sentence in parse['sentences']:
-		span = []
-		# Get token information
-		tokens = sentence['tokens']
-		dependencies = sentence['basicDependencies']
-		# Make tokens into StanfordTokens
-		for token in tokens:
-			new_token = StanfordToken(doc_i, token['characterOffsetBegin'], token['lemma'], token['pos'], token['originalText'], token['after'], token['word'], doc)
-			doc_i += 1
-			span.append(new_token)
-		# Add dependency relation and head index to tokens
-		for dependency in dependencies:
-			span[dependency['dependent'] - 1].head_idx = dependency['governor'] - 1
-			span[dependency['dependent'] - 1].dep_ = dependency['dep']
-		# Add pointer to head of each token
-		for new_token in span:
-			# ROOT has itself as head
-			try:
-				if new_token.head_idx == -1:
-					new_token.head = new_token
-				else:
-					new_token.head = span[new_token.head_idx]
-					new_token.head.children.append(new_token)
-			# Occasionally, a misformed parse yields a token without a head, default to ROOT, and show problematic sentence
-			except AttributeError:
-				new_token.head_idx = -1
-				new_token.dep_ = u'ROOT'
-				new_token.head = new_token
-				print('Headless word \'{0}\' in sentence "{1}"'.format(new_token.text.encode('utf-8'), ''.join([x.text_with_ws.encode('utf-8') for x in span])))
-		# Add subtree to each token
-		for new_token in span:
-			new_token.subtree = new_token.get_subtree()
-			new_token.rights = new_token.get_rights()
-		doc.sents.append(StanfordSpan(span))
-	# Generate token list
-	doc.set_tokens()
-	
-	return doc
-
 ###### PARSING ######
-def load_parser(parser_type):
-	'''Loads Spacy or Stanford CoreNLP'''
+def load_parser(spacy_model_name = "en_core_web_sm"):
+	'''Loads Spacy model'''
 
 	time_0 = time.time()
 	print('Loading parser...')
-	if parser_type == 'spacy':
-		parser = spacy.load("en_core_web_sm")
-	"""
-	elif parser_type == 'stanford':
-		with corenlp.CoreNLPClient(annotators="tokenize ssplit pos lemma ner depparse".split()) as client:
-  		ann = client.annotate(text)
-		
-		parser = StanfordCoreNLP('ext/stanford', memory='6g')
-		parse((parser_type, parser), 'The cat sat on the mat.') # Annotate dummy sentence to force loading of annotation modules"""
-	print('Done! Loading parser took {0:.2f} seconds'.format(time.time() - time_0))
+	parser = spacy.load(spacy_model_name)
+	print('Done! Loading \'{0}\' parser took {1:.2f} seconds'.format(spacy_model_name, time.time() - time_0))
 
-	return (parser_type, parser)
+	return (parser)
 
 def parse(parser, text):
-	'''Parses a (unicode) string and returns the parse.'''
+	'''Parses a string and returns the parse.'''
 
-	if parser[0] == 'spacy':
-		# Convert to unicode if necessary
-		# Normalize quotes, ‘ ’ ❛ ❜ to ', and “ ” ❝ ❞ to ", Spacy doesn't process them well
-		text = re.sub(u'‘|’|❛|❜', u"'", text)
-		text = re.sub(u'“|”|❝|❞', u'"', text)
-		# Insert a space between punctuation and a dash, Spacy doesn't process that well either
-		text = re.sub(r'([^\w\s])([-—])', r'\1 \2', text)
-		return parser[1](text)
-	"""
-	if parser[0] == 'stanford':
-		# Convert from unicode if necessary
-		try:
-			text = text.encode('utf-8')
-		except UnicodeDecodeError:
-			pass
-		properties={'annotators': 'tokenize,ssplit,pos,lemma,depparse','pipelineLanguage':'en','outputFormat':'json'}
-		parsed_text = parser[1].annotate(text, properties=properties)
-		parsed_text = json.loads(parsed_text)
-		return stanford_to_spacy(parsed_text)"""
+	# Convert to unicode if necessary
+	# Normalize quotes, ‘ ’ ❛ ❜ to ', and “ ” ❝ ❞ to ", Spacy doesn't process them well
+	text = re.sub(u'‘|’|❛|❜', u"'", text)
+	text = re.sub(u'“|”|❝|❞', u'"', text)
+	# Insert a space between punctuation and a dash, Spacy doesn't process that well either
+	text = re.sub(r'([^\w\s])([-—])', r'\1 \2', text)
+	return parser(text)
 
 ###### POS-TAGGING ######
-def load_pos_tagger():
+def load_pos_tagger(spacy_model_name = "en_core_web_sm"):
 	'''Loads Spacy PoS-tagger which takes pre-tokenized text.'''
 	
 	time_0 = time.time()
 	print('Loading PoS-tagger...')
-	pos_tagger = spacy.load("en_core_web_sm", disable = ['ner', 'parser'])
+	pos_tagger = spacy.load(spacy_model_name, disable = ['ner', 'parser'])
 	print('Done! Loading PoS-tagger took {0:.2f} seconds'.format(time.time() - time_0))
 
 	return pos_tagger
@@ -198,11 +61,10 @@ def pos_tag(pos_tagger, text):
 	# Convert into list of words and tags
 	words_and_tags = []
 	for token in doc:
-		words_and_tags.append(token.text + u'|' + token.tag_)
-		
+		words_and_tags.append(token.text + u'|' + token.tag_)		
 	return words_and_tags
 
-###### MORPHA ######	
+###### MORPHA ######	     #yj: time to review from this point.
 def morpha(morph_dir, tokens, keep_case = True, keep_pos = False):
 	'''Interface to morpha and its options, takes list of tokens as input, returns list of uninflected tokens.'''
 
