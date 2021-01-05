@@ -21,7 +21,7 @@ parser.add_argument('-d', '--dict', metavar = 'wiktionary|ue|oxford|intersection
 parser.add_argument('corpus', metavar = 'CORPUS', type = str, help = "Specify the location of the corpus to extract PIEs from.")
 parser.add_argument('-t', '--corpus-type', metavar = 'plain|bnc|bnc-dev|bnc-test', type = str, default = 'plain', help = "Specify the type of corpus used. Plain text or BNC (all and dev/test sets).")
 parser.add_argument('-m', '--method', metavar = 'exact|fuzzy|inflect|parse', type = str, default = 'exact', help = "Specify the extraction method to use. 'exact' for exact string matching, 'fuzzy' for fuzzy/ string matching, 'inflect' for inflectional string matching, 'parse' for parse-based extraction.")
-parser.add_argument('-p', '--parser', metavar = 'spacy|stanford', type = str, default = 'spacy', help = "Specify whether to use the Spacy or Stanford parser for parse-based extraction")
+parser.add_argument('-p', '--parser-model', metavar = 'en_core_web_sm|en_core_web_md|en_core_web_lg', type = str, default = 'en_core_web_sm', help = "Specify sPacy pretrained English language model. The default model is en_core_web_sm")
 parser.add_argument('-ex', '--example-sentences', metavar = 'CORPUS', type = str, help = "With the 'parse' method, specify this option to retrieve example sentences for in-context parsing. Specify a path to a corpus or to the file containing the cached output of this method.")
 parser.add_argument('-iw', '--intervening-words', metavar = 'N', type = int, default = 0, help = "Number of intervening words allowed between words of an idiom in the string match methods. Default is 0.")
 parser.add_argument('-c', '--context', metavar = '{0-9}+{ws}', type = str, default = '0s', help = "Amount of context to extract around the idiom. Can be a number of words or sentences. '0w' will yield only the idiom, '1w' one word of context on both sides of the idiom, etc. Word-contexts never exceed sentence boundaries. '0s' will yield only the sentence containing the idiom.")
@@ -56,8 +56,8 @@ if args.method in ['exact', 'fuzzy', 'inflect', 'parse']:
 else:
 	raise ValueError("No valid extraction method specified.")
 
-if args.parser.lower() in ['spacy', 'stanford']:
-	PARSER = args.parser.lower()
+if args.parser_model.lower() in ['en_core_web_sm', 'en_core_web_md', 'en_core_web_lg']:
+	PARSER = args.parser_model.lower()
 else:
 	raise ValueError("No valid parser specified.")
 
